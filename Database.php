@@ -11,8 +11,10 @@
  */
 class Database {
 
-  private $host, $database, $username, $password, $connection;
-  private $port = 3306;
+  private $host, $database, $username, $password, $connection;  // connection credentials
+  private $port = 3306; // default port
+
+  private $affected_rows;  // properties to save before executing next query
 
   /**
    * Sets the connection credentials to connect to your database.
@@ -56,7 +58,11 @@ class Database {
    * @param array $parameters - your parameters to bind to your query
    * @return mysqli_result result of the executed query 
    */
-  function query($query, $parameters) {
+  function query($query, $parameters = array()) {
+    // reset data of last query
+    $this->affected_rows = 0;
+
+    // prepare the query
     $stmt = $this->connection->prepare($query);
 
     // check if prepare statement failed
@@ -88,10 +94,27 @@ class Database {
     // execute the query
     if ($stmt->execute()) {
       $result = $stmt->get_result();
+      $this->affected_rows = $stmt->affected_rows;
       $stmt->close();
       return $result;
     } else {
       die("Error executing query: " . $stmt->error);
     }
+  }
+
+  /**
+   * Get the amount of affected rows of the last executed query.
+   * @return integer
+   */
+  function get_affected_rows() {
+    return $this->affected_rows;
+  }
+
+  /**
+   * Get the last inserted id of the last executed query.
+   * @return integer
+   */
+  function get_last_inserted_id() {
+    return $this->connection->insert_id;
   }
 }
